@@ -1,7 +1,14 @@
 name: ci
 
 # yamllint disable-line rule:truthy
-on: push
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
 
 permissions:
   contents: read
@@ -32,7 +39,6 @@ jobs:
         TERRAFORM_TFLINT_CONFIG_FILE: .tflint.hcl
         VALIDATE_ALL_CODEBASE: false
         VALIDATE_BIOME_FORMAT: false
-        VALIDATE_CHECKOV: false
         VALIDATE_JSCPD: false
         VALIDATE_MARKDOWN_PRETTIER: false
         VALIDATE_NATURAL_LANGUAGE: false
@@ -41,10 +47,32 @@ jobs:
         VALIDATE_TRIVY: false
         VALIDATE_YAML_PRETTIER: false
 
-    - name: Terraform fmt
-      id: fmt
-      # yamllint disable-line rule:line-length
-      uses: docker://hashicorp/terraform@sha256:a5d5a5a892c98f60fcbfa81eac2a40fc19e7b3fa7719bccae10ff6111d22524a  # 1.17.1
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e  # v4.0.1
       with:
-        entrypoint: terraform
-        args: fmt -check -recursive -diff
+        terraform_version: 1.17.1
+
+    - name: Terraform Format Check
+      run: terraform fmt -check -recursive -diff
+
+    - name: Find and Validate Directories
+      run: |
+        dirs=$(find . -type f -name "*.tf" -not -path '*/.*' -exec dirname {} \; | sort -u)
+
+        error_found=0
+
+        for dir in $dirs; do
+          echo "::group::validating: $dir"
+
+          (
+            cd "$dir" || exit 1
+            terraform init -backend=false -input=false || exit 1
+            terraform validate || exit 1
+          ) || { echo "Validation failed in $dir"; error_found=1; }
+
+          echo "::endgroup::"
+        done
+
+        if [ $error_found -ne 0 ]; then
+          exit 1
+        fi

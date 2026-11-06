@@ -2,15 +2,27 @@
 # EKS VPCs
 ##
 
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state                  = "available"
+  all_availability_zones = false
+
+  filter {
+    name = "zone-name"
+    values = [
+      "${local-region}a",
+      "${local-region}b",
+      "${local-region}c",
+    ]
+  }
+}
 
 locals {
   vpc_cidr = "10.20.0.0/16"
 
-  number_of_azs       = 3
-  vpc_private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, local.number_of_azs, k + length(local.azs) + 1)]
-  vpc_public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, local.number_of_azs, k + 1)]
-  azs                 = slice(data.aws_availability_zones.available.names, 0, local.number_of_azs)
+  subnet_newbits      = 3
+  vpc_private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, local.subnet_newbits, k + length(local.azs) + 1)]
+  vpc_public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, local.subnet_newbits, k + 1)]
+  azs                 = data.aws_availability_zones.available.names
 
   # ref: https://docs.aws.amazon.com/vpc/latest/privatelink/aws-services-privatelink-support.html
   #
@@ -140,6 +152,11 @@ module "endpoints" {
 ##
 
 # Reserve one Elastic IP per NAT GW az.
+#
+#checkov:skip=CKV_AWS_19:EIP addresses are assigned to module.vpc.external_nat_ip_ids.
+# IPs are attached to the default aws_nat_gateway resource.
+# https://github.com/terraform-aws-modules/terraform-aws-vpc/blob/b3abd6df2ecf052451a361ed55b8f06f8742a795/main.tf#L1204
+
 resource "aws_eip" "nat" {
   for_each = toset(module.vpc.azs)
 
@@ -151,4 +168,21 @@ resource "aws_eip" "nat" {
     Az      = each.value
     Vpc     = module.vpc.vpc_id
   })
+}
+
+##
+# Bastion Host
+##
+
+module "bastion-host" {
+  source                          = "../../../../modules/bastion-host"
+
+  tag_application                 = var.tag_application
+  target_environment              = var.target_environment
+
+  subnet_id                       = module.vpc.private_subnets[0]
+
+  bastion_host_security_group_ids = [module.bastion-vpc.vpc_bastion_host_security_group]
+
+  bastion_host_policy             = var.bastion_host_policy
 }

@@ -22,4 +22,4 @@ check_terraform:
 clean:
 	@find ** -name "tfplan" -exec rm "{}" +
 
-.PHONY: all bootstrap check check_terraform check_github_actions clean docs
+.PHONY: all bootstrap check check_terraform check_github_actions clean

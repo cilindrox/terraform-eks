@@ -212,3 +212,17 @@ module "eks" {
     }
   }
 }
+
+##
+# Karpenter Pod Identity Setup
+##
+
+module "karpenter" {
+  source = "git::https://github.com/terraform-aws-modules/terraform-aws-eks.git//modules/karpenter?ref=91f11ea01656c26b8e6b8eb1b74f19863f60056c" # v21.29.0
+
+  cluster_name = module.eks.cluster_name
+
+  create_pod_identity_association = true
+
+  tags = local.tags
+}

@@ -1,0 +1,50 @@
+name: ci
+
+# yamllint disable-line rule:truthy
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint code base
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Run Super-Linter
+      uses: super-linter/super-linter/slim@2da136927bd4a73596db63044b504547c62cb854  # v9.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        LOG_LEVEL: NOTICE
+        SUPPRESS_POSSUM: true
+        SAVE_SUPER_LINTER_SUMMARY: true
+        ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
+        ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: true
+        TERRAFORM_TFLINT_CONFIG_FILE: .tflint.hcl
+        VALIDATE_ALL_CODEBASE: false
+        VALIDATE_BIOME_FORMAT: false
+        VALIDATE_CHECKOV: false
+        VALIDATE_JSCPD: false
+        VALIDATE_MARKDOWN_PRETTIER: false
+        VALIDATE_NATURAL_LANGUAGE: false
+        VALIDATE_TERRAFORM_FMT: false
+        VALIDATE_TERRAGRUNT: false
+        VALIDATE_TRIVY: false
+        VALIDATE_YAML_PRETTIER: false
+
+    - name: Terraform fmt
+      id: fmt
+      # yamllint disable-line rule:line-length
+      uses: docker://hashicorp/terraform@sha256:a5d5a5a892c98f60fcbfa81eac2a40fc19e7b3fa7719bccae10ff6111d22524a  # 1.17.1
+      with:
+        entrypoint: terraform
+        args: fmt -check -recursive -diff

@@ -11,9 +11,10 @@ module "eks" {
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
-  # TODO(gfestari): restrict access to VPN
-  endpoint_public_access       = true
-  endpoint_public_access_cidrs = ["0.0.0.0/0"]
+  endpoint_private_access = true
+  endpoint_public_access  = false
+
+  authentication_mode = "API"
 
   access_entries = {
     admin = {
@@ -52,6 +53,15 @@ module "eks" {
     # id of the user performing the apply.
     "arn:aws:iam::${data.aws_caller_identity.current.id}:role/clusterAdmin",
   ]
+
+  ssm_bastion_ingress = {
+    description              = "Allow traffic from SSM bastion to cluster control plane."
+    protocol                 = "tcp"
+    from_port                = 443
+    to_port                  = 443
+    type                     = "ingress"
+    source_security_group_id = module.bastion.security_group_id
+  }
 
   # Depending on the controller, additional rules might be required:
   # https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2359

@@ -27,6 +27,23 @@ terraform -chdir=bootstrap apply
 These steps are required for initial bucket creation and in case of disaster
 recovery.
 
+### Accessing the Kubernetes Cluster
+
+The current implementation uses a private EC2 bastion host, accessible only via
+AWS Systems Manager (SSM) Session Manager for securely access the cluster's
+private endpoint.
+
+An alternative to the bastion deployment would be restricting the endpoint's
+public access to an IP or CIDR controlled by the managing teams, such as a VPN,
+eg:
+
+```diff
+module "eks" {
++  endpoint_public_access       = true
++  endpoint_public_access_cidrs = ["10.20.5.4/24"] # VPN IP
+}
+```
+
 ## Repo Structure
 
 Repo structure follows the AWS Organizational Unit structure, where `acme` is

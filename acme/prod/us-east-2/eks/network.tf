@@ -174,15 +174,31 @@ resource "aws_eip" "nat" {
 # Bastion Host
 ##
 
-module "bastion-host" {
-  source                          = "../../../../modules/bastion-host"
+module "bastion" {
+  source = "../../../../modules/bastion-host"
 
-  tag_application                 = var.tag_application
-  target_environment              = var.target_environment
+  name      = "eks-ssm-bastion"
+  stage     = "dev"
+  namespace = "eg"
 
-  subnet_id                       = module.vpc.private_subnets[0]
+  vpc_id  = module.vpc.vpc_id
+  subnets = module.vpc.private_subnets
 
-  bastion_host_security_group_ids = [module.bastion-vpc.vpc_bastion_host_security_group]
+  instance_type = "t3.nano"
+  ssh_key_name  = ""
 
-  bastion_host_policy             = var.bastion_host_policy
+  associate_public_ip_address = false
+
+  # Access strictly via SSM
+  security_group_rules = [
+    {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = "Allow all outbound traffic"
+    }
+  ]
 }
+

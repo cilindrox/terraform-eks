@@ -9,9 +9,9 @@ data "aws_availability_zones" "available" {
   filter {
     name = "zone-name"
     values = [
-      "${local-region}a",
-      "${local-region}b",
-      "${local-region}c",
+      "${local.region}a",
+      "${local.region}b",
+      "${local.region}c",
     ]
   }
 }

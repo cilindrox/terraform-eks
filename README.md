@@ -27,6 +27,26 @@ terraform -chdir=bootstrap apply
 These steps are required for initial bucket creation and in case of disaster
 recovery.
 
+### Accessing the Kubernetes Cluster
+
+The current implementation uses a private EC2 bastion host, accessible only via
+AWS Systems Manager (SSM) Session Manager for securely access the cluster's
+private endpoint.
+
+The bastion host is provisioned via a [custom terraform
+module](./modules/bastion-host).
+
+An alternative to the bastion deployment would be restricting the endpoint's
+public access to an IP or CIDR controlled by the managing teams, such as a VPN,
+eg:
+
+```diff
+module "eks" {
++  endpoint_public_access       = true
++  endpoint_public_access_cidrs = ["10.5.4.3/32"] # VPN IP
+}
+```
+
 ## Repo Structure
 
 Repo structure follows the AWS Organizational Unit structure, where `acme` is
@@ -51,7 +71,7 @@ Addons can be upgraded individually either by passing the addon version on the
 plane.
 
 To update an existing cluster's Kubernetes version, simply update the
-`kubernetes_version` parameter, eg:
+`kubernetes_version` value, eg:
 
 ```diff
 module "eks" {
@@ -69,6 +89,21 @@ module "eks" {
 }
 ```
 
+Alternatively, update the `local.kubernetes_version` variable, eg:
+
+```diff
+locals {
+  # ...
+
+-  kubernetes_version = "1.37"
++  kubernetes_version = "1.38"
+
+}
+```
+
+Keep in mind that you will need to pin any node groups to the previous version
+to avoid a simmultaneous upgrade. See the following section for details.
+
 ### Upgrading Node Groups
 
 Node groups can be updated independently of the control plane by overriding the
@@ -79,13 +114,20 @@ the control plane, it is [highly recommended][update-k8s] to do it on a separate
 `plan/apply` stage, eg:
 
 ```diff
+locals {
+  # ...
+
+-  kubernetes_version = "1.37"
++  kubernetes_version = "1.38"
+
+}
+
 module "eks" {
   # ..
 
   name = local.cluster_name
 
--  kubernetes_version = "1.37"
-+  kubernetes_version = "1.38"
+  kubernetes_version = local.kubernetes_version
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -110,7 +152,6 @@ module "eks" {
 The example above pins the `my-node` node group to the current
 `kubernetes_version` and upgrades the control plane. Once the control plane has
 been verified, we can proceed with the node group upgrade, eg:
-
 
 ```diff
 module "eks" {
@@ -140,6 +181,9 @@ module "eks" {
   # ...
 }
 ```
+
+Alternaitvely, you can remove the `kubernetes_version = "1.37"` line entirely
+and rely on the cluster's configured version for the upgrade.
 
 ## VPC and Subnet Requirements
 
@@ -222,7 +266,7 @@ and then, disable the NAT GW:
 +   enable_nat_gateway  = false
 -   single_nat_gateway  = false
 -   reuse_nat_ips       = true
--   external_nat_ip_ids = "${aws_eip.nat.*.id}"
+-   external_nat_ip_ids = [for az in local.azs : aws_eip.nat[az].id]
 
   }
 ```

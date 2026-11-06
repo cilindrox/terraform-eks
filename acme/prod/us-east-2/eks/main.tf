@@ -11,16 +11,14 @@ module "eks" {
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
-  # TODO(gfestari): restrict access to VPN
-  endpoint_public_access       = true
-  endpoint_public_access_cidrs = ["0.0.0.0/0"]
+  endpoint_private_access = true
+  endpoint_public_access  = false
+
+  authentication_mode = "API"
 
   access_entries = {
     admin = {
-      # TODO(gfestari): roles need to exist in the account or managed here under
-      # iam.tf
-      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.id}:role/clusterAdmin"
-
+      principal_arn = aws_iam_role.eks_admin.arn
       policy_associations = {
         example = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
@@ -31,8 +29,7 @@ module "eks" {
       }
     }
     viewer = {
-      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.id}:role/clusterViewer"
-
+      principal_arn = aws_iam_role.eks_viewer.arn
       policy_associations = {
         example = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
@@ -48,10 +45,19 @@ module "eks" {
   deletion_protection = true
 
   kms_key_administrators = [
-    # TODO(gfestari): roles need to exist in the account. This falls back to the
-    # id of the user performing the apply.
-    "arn:aws:iam::${data.aws_caller_identity.current.id}:role/clusterAdmin",
+    aws_iam_role.eks_admin.arn,
   ]
+
+  security_group_additional_rules = {
+    ssm_bastion_ingress = {
+      description              = "Allow traffic from SSM bastion to cluster control plane."
+      protocol                 = "tcp"
+      from_port                = 443
+      to_port                  = 443
+      type                     = "ingress"
+      source_security_group_id = module.bastion.security_group_id
+    }
+  }
 
   # Depending on the controller, additional rules might be required:
   # https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2359
@@ -220,9 +226,11 @@ module "eks" {
 module "karpenter" {
   source = "git::https://github.com/terraform-aws-modules/terraform-aws-eks.git//modules/karpenter?ref=91f11ea01656c26b8e6b8eb1b74f19863f60056c" # v21.29.0
 
-  cluster_name = module.eks.cluster_name
-
+  cluster_name                    = module.eks.cluster_name
+  namespace                       = "kube-system"
+  service_account                 = "karpenter"
   create_pod_identity_association = true
+  node_iam_role_name              = "Karpenter-${module.eks.cluster_name}"
 
   tags = local.tags
 }

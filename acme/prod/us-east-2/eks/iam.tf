@@ -50,6 +50,50 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
+##
+# EKS IAM Access Roles
+##
+
+# These could be managed externally by an "IAM account" in the same AWS org.
+resource "aws_iam_role" "eks_admin" {
+  name        = "eks-cluster-admin-role"
+  description = "IAM Role assumed by cluster administrators to access EKS via Access Entries."
+
+  assume_role_policy = data.aws_iam_policy_document.sts_assume_role.json
+
+  tags = merge(local.tags, {
+    Environment = "production"
+    Role        = "eks-admin"
+  })
+}
+
+resource "aws_iam_role" "eks_viewer" {
+  name        = "eks-cluster-viewer-role"
+  description = "IAM Role assumed by users who need read-only visibility into the EKS cluster."
+
+  assume_role_policy = data.aws_iam_policy_document.sts_assume_role.json
+
+  tags = merge(local.tags, {
+    Environment = "production"
+    Role        = "eks-viewer"
+  })
+}
+
+data "aws_iam_policy_document" "sts_assume_role" {
+  statement {
+    actions = [
+      "sts:AssumeRole",
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+
+    effect = "Allow"
+  }
+}
+
 # TODO(gfestari): block commented to prevent a
 # "no matching Route 53 Hosted Zone found" error during plan.
 #

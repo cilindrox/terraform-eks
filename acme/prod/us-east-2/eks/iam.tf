@@ -39,10 +39,11 @@ locals {
       service_account                 = "aws-load-balancer-controller"
     }
     vpc-cni = {
-      attach_vpc_cni_policy          = true
-      namespace                      = "kube-system"
-      service_account                = "aws-node"
-      vpc_cni_enable_cloudwatch_logs = true
+      attach_aws_vpc_cni_policy          = true
+      namespace                          = "kube-system"
+      service_account                    = "aws-node"
+      aws_vpc_cni_enable_cloudwatch_logs = true
+      aws_vpc_cni_enable_ipv4            = true
     }
   }
 }
@@ -88,7 +89,7 @@ module "pod_identity" {
   attach_external_dns_policy    = try(each.value.attach_external_dns_policy, false)
   external_dns_hosted_zone_arns = try(each.value.external_dns_hosted_zone_arns, [])
 
-  attach_aws_ebs_csi_policy = try(each.value.attach_ebs_csi_policy, false)
+  attach_aws_ebs_csi_policy = try(each.value.attach_aws_ebs_csi_policy, false)
   aws_ebs_csi_kms_arns      = try(each.value.aws_ebs_csi_kms_arns, [])
 
   attach_aws_lb_controller_policy = try(each.value.attach_aws_lb_controller_policy, false)
@@ -99,6 +100,7 @@ module "pod_identity" {
 
   attach_aws_vpc_cni_policy          = try(each.value.attach_aws_vpc_cni_policy, false)
   aws_vpc_cni_enable_cloudwatch_logs = try(each.value.aws_vpc_cni_enable_cloudwatch_logs, false)
+  aws_vpc_cni_enable_ipv4            = try(each.value.aws_vpc_cni_enable_ipv4, false)
   aws_vpc_cni_enable_ipv6            = try(each.value.aws_vpc_cni_enable_ipv6, false)
 
   trust_policy_conditions = [

@@ -39,13 +39,6 @@ locals {
   ])
 
   nat_gw_name = "nat-gw"
-
-  # VPC module lacks a way of linking subnets to their routing table, requiring
-  # this additional map.
-  zone_private_route_table = {
-    for idx, subnet in module.vpc.private_subnet_objects :
-    subnet.availability_zone => module.vpc.private_route_table_ids[idx]
-  }
 }
 
 module "vpc" {

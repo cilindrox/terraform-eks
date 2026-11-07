@@ -4,11 +4,10 @@ name: ci
 on:
   push:
     branches:
-    - main
+    - '**'
   pull_request:
     branches:
     - main
-
 
 permissions:
   contents: read
@@ -44,7 +43,6 @@ jobs:
         VALIDATE_NATURAL_LANGUAGE: false
         VALIDATE_TERRAFORM_FMT: false
         VALIDATE_TERRAGRUNT: false
-        VALIDATE_TRIVY: false
         VALIDATE_YAML_PRETTIER: false
 
     - name: Setup Terraform

@@ -56,7 +56,7 @@ data "aws_caller_identity" "current" {}
 
 # These could be managed externally by an "IAM account" in the same AWS org.
 resource "aws_iam_role" "eks_admin" {
-  name        = "eks-cluster-admin-role"
+  name        = "eks-cluster-admin"
   description = "IAM Role assumed by cluster administrators to access EKS via Access Entries."
 
   assume_role_policy = data.aws_iam_policy_document.sts_assume_role.json
@@ -68,7 +68,7 @@ resource "aws_iam_role" "eks_admin" {
 }
 
 resource "aws_iam_role" "eks_viewer" {
-  name        = "eks-cluster-viewer-role"
+  name        = "eks-cluster-viewer"
   description = "IAM Role assumed by users who need read-only visibility into the EKS cluster."
 
   assume_role_policy = data.aws_iam_policy_document.sts_assume_role.json

@@ -190,6 +190,8 @@ module "eks" {
       min_size       = 1
       max_size       = 6
 
+      kubernetes_version = local.kubernetes_version
+
       update_config = {
         max_unavailable_percentage = 33
       }

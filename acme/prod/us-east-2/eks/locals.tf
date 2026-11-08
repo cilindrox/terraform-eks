@@ -5,7 +5,7 @@ locals {
 
   tags = {
     Region      = local.region
-    Environment = "eks"
+    Environment = "production"
     Managed-by  = "Terraform"
     Owner       = "ops"
   }

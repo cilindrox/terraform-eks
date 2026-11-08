@@ -75,7 +75,7 @@ No modules.
 | <a name="input_ebs_block_device_volume_size"></a> [ebs\_block\_device\_volume\_size](#input\_ebs\_block\_device\_volume\_size) | Volume size in GiB for the creation of an additional EBS block device. Ignored if size is 0. | `number` | `0` | no |
 | <a name="input_ebs_delete_on_termination"></a> [ebs\_delete\_on\_termination](#input\_ebs\_delete\_on\_termination) | Toggle destruction of the the EBS volume on instance termination. | `bool` | `true` | no |
 | <a name="input_ebs_device_name"></a> [ebs\_device\_name](#input\_ebs\_device\_name) | Name of the EBS block device to mount on the instance. | `string` | `"/dev/sdh"` | no |
-| <a name="input_ebs_snapshot_id"></a> [ebs\_snapshot\_id](#input\_ebs\_snapshot\_id) | Use a snapshot id for the additional EBS block device. Ignored when specifying `ebs_block_device_volume_size` > 0. | `string` | `""` | no |
+| <a name="input_ebs_snapshot_id"></a> [ebs\_snapshot\_id](#input\_ebs\_snapshot\_id) | Use a snapshot id for the additional EBS block device. Ignored when specifying `ebs_block_device_volume_size` > 0. | `string` | `null` | no |
 | <a name="input_enabled"></a> [enabled](#input\_enabled) | Toggle resource creation. Module skips creating any resources when set to `false`. | `bool` | `true` | no |
 | <a name="input_instance_type"></a> [instance\_type](#input\_instance\_type) | EC2 instance type. | `string` | `"t4g.small"` | no |
 | <a name="input_metadata_http_endpoint_enabled"></a> [metadata\_http\_endpoint\_enabled](#input\_metadata\_http\_endpoint\_enabled) | Enable the metadata instance service. | `bool` | `true` | no |

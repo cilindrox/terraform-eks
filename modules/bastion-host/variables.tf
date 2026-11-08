@@ -155,5 +155,5 @@ variable "ebs_device_name" {
 variable "ebs_snapshot_id" {
   description = "Use a snapshot id for the additional EBS block device. Ignored when specifying `ebs_block_device_volume_size` > 0."
   type        = string
-  default     = ""
+  default     = null
 }

@@ -45,7 +45,7 @@ module "eks" {
   deletion_protection = true
 
   kms_key_administrators = [
-    aws_iam_role.eks_admin.arn,
+    aws_iam_role.kms_key_admin.arn,
   ]
 
   security_group_additional_rules = {

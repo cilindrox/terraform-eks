@@ -96,6 +96,8 @@ module "flow_log" {
   name   = module.vpc.vpc_id
   vpc_id = module.vpc.vpc_id
 
+  log_format = "$${version} $${vpc-id} $${subnet-id} $${interface-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${bytes} $${start} $${end} $${action} $${log-status}"
+
   cloudwatch_log_group_retention_in_days = 30
 
   tags = local.tags
@@ -176,8 +178,7 @@ module "bastion" {
   vpc_id  = module.vpc.vpc_id
   subnets = module.vpc.private_subnets
 
-  # The instance must be able to reach public AWS SSM endpoints or VPC endpoints
-  # on port 443
+  # Allow VPC endpoints on port 443 for kubectl access
   security_group_rules = [
     {
       description = "Allow outbound HTTPS traffic to AWS SSM endpoints"
@@ -185,20 +186,6 @@ module "bastion" {
       to_port     = 443
       protocol    = "tcp"
       cidr_blocks = [module.vpc.vpc_cidr_block]
-    },
-    {
-      description = "Allow outbound DNS to Amazon Provided DNS"
-      from_port   = 53
-      to_port     = 53
-      protocol    = "udp"
-      cidr_blocks = ["169.254.169.253/32"]
-    },
-    {
-      description = "Allow outbound DNS upgrades to Amazon Provided DNS"
-      from_port   = 53
-      to_port     = 53
-      protocol    = "tcp"
-      cidr_blocks = ["169.254.169.253/32"]
     },
   ]
 

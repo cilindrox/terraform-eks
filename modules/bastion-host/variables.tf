@@ -108,20 +108,6 @@ variable "security_group_rules" {
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
     },
-    {
-      description = "Allow outbound DNS to Amazon Provided DNS"
-      from_port   = 53
-      to_port     = 53
-      protocol    = "udp"
-      cidr_blocks = ["169.254.169.253/32"]
-    },
-    {
-      description = "Allow outbound DNS upgrades to Amazon Provided DNS"
-      from_port   = 53
-      to_port     = 53
-      protocol    = "tcp"
-      cidr_blocks = ["169.254.169.253/32"]
-    },
   ]
 }
 

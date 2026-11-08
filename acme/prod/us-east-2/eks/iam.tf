@@ -79,18 +79,42 @@ resource "aws_iam_role" "eks_viewer" {
   })
 }
 
+resource "aws_iam_role" "kms_key_admin" {
+  name        = "kms-key-admin"
+  description = "IAM Role assumed by KMS key administrators."
+
+  assume_role_policy = data.aws_iam_policy_document.sts_assume_role.json
+
+  max_session_duration = 7200 # 2 hours
+
+  tags = merge(local.tags, {
+    Environment = "production"
+    Role        = "kms-admin"
+  })
+}
+
 data "aws_iam_policy_document" "sts_assume_role" {
   statement {
-    actions = [
-      "sts:AssumeRole",
-    ]
+    sid    = "AllowSSOAssumeRole"
+    effect = "Allow"
+
+    actions = ["sts:AssumeRole"]
 
     principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+      type = "AWS"
+      identifiers = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+      ]
     }
 
-    effect = "Allow"
+    condition {
+      test     = "ArnLike"
+      variable = "aws:PrincipalArn"
+      values = [
+        # WARN: Matches any user assuming an SSO-generated permission set role
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/://amazonaws.com_*"
+      ]
+    }
   }
 }
 

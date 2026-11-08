@@ -117,7 +117,7 @@ module "eks" {
             memory = "256Mi"
           }
           limits = {
-            memory = "256Mi"
+            memory = "384Mi"
           }
         }
       })
@@ -155,11 +155,6 @@ module "eks" {
           {
             key      = "CriticalAddonsOnly"
             operator = "Exists"
-          },
-          {
-            effect            = "NoExecute"
-            operator          = "Exists"
-            tolerationSeconds = 300
           },
         ]
         topologySpreadConstraints = [{

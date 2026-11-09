@@ -30,7 +30,7 @@ recovery.
 ### Accessing the Kubernetes Cluster
 
 The current implementation uses a private EC2 bastion host, accessible only via
-AWS Systems Manager (SSM) Session Manager for securely accessing the cluster's
+AWS Systems Manager (SSM) Session Manager for interacting with the cluster's
 private endpoint.
 
 The bastion host is provisioned via a [custom terraform

@@ -30,7 +30,7 @@ recovery.
 ### Accessing the Kubernetes Cluster
 
 The current implementation uses a private EC2 bastion host, accessible only via
-AWS Systems Manager (SSM) Session Manager for securely access the cluster's
+AWS Systems Manager (SSM) Session Manager for securely accessing the cluster's
 private endpoint.
 
 The bastion host is provisioned via a [custom terraform
@@ -102,7 +102,7 @@ locals {
 ```
 
 Keep in mind that you will need to pin any node groups to the previous version
-to avoid a simmultaneous upgrade. See the following section for details.
+to avoid a simultaneous upgrade. See the following section for details.
 
 ### Upgrading Node Groups
 
@@ -182,7 +182,7 @@ module "eks" {
 }
 ```
 
-Alternaitvely, you can remove the `kubernetes_version = "1.37"` line entirely
+Alternatively, you can remove the `kubernetes_version = "1.37"` line entirely
 and rely on the cluster's configured version for the upgrade.
 
 ## VPC and Subnet Requirements

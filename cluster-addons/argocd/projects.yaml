@@ -1,0 +1,145 @@
+# Remove all permissions from the 'default' project.
+# Forces use of dedicated projects with explicit source, destination, and
+# resource permissions.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: default
+spec:
+  sourceRepos: []
+  sourceNamespaces: []
+  destinations: []
+  namespaceResourceBlacklist:
+  - group: '*'
+    kind: '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: local-cluster
+  namespace: argocd
+spec:
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  description: Manage the in-cluster Argo CD and components
+  destinations:
+  - namespace: '*'
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://github.com/cilindrox/terraform-eks
+  orphanedResources:
+    warn: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: remote-clusters
+  namespace: argocd
+spec:
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  description: Manage cluster addons on remote EKS clusters
+  destinations:
+  # Restrict installing directly to the local cluster
+  - namespace: '*'
+    server: '!https://kubernetes.default.svc'
+  - namespace: '*'
+    server: '*'
+  sourceRepos:
+  - https://github.com/cilindrox/terraform-eks
+  orphanedResources:
+    warn: true
+---
+# Global projects provide configurations that other projects can inherit from.
+# https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#configuring-global-projects-v18
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: global-rbac
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  # Deny all cluster-scoped resources from being created, except for these
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  description: Global project to inherit RBAC from
+  # Deny all namespaced resources from being created, except the following:
+  namespaceResourceWhitelist:
+  - group: ''
+    kind: ConfigMap
+  - group: ''
+    kind: Pod
+  - group: ''
+    kind: Secret
+  - group: ''
+    kind: Service
+  - group: ''
+    kind: ServiceAccount
+  - group: apps
+    kind: Deployment
+  - group: apps
+    kind: ReplicaSet
+  - group: apps
+    kind: StatefulSet
+  - group: autoscaling
+    kind: HorizontalPodAutoscaler
+  - group: batch
+    kind: CronJob
+  - group: batch
+    kind: Job
+  - group: external-secrets.io
+    kind: ExternalSecret
+  - group: gateway.envoyproxy.io
+    kind: BackendTrafficPolicy
+  - group: gateway.envoyproxy.io
+    kind: HTTPRouteFilter
+  - group: gateway.envoyproxy.io
+    kind: SecurityPolicy
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+  - group: keda.sh
+    kind: ScaledObject
+  - group: keda.sh
+    kind: TriggerAuthentication
+  - group: monitoring.coreos.com
+    kind: ServiceMonitor
+  - group: policy
+    kind: PodDisruptionBudget
+  # By default, only these repos are allowed as manifest sources
+  sourceRepos:
+  - https://github.com/cilindrox/terraform-eks
+  destinations:  # github.com/argoproj/argo-cd/issues/12383
+  - namespace: '!{argocd,cert-manager,default,falco,keda,kube-node-lease,kube-public,kube-system,kyverno,velero}'
+    server: '*'
+  orphanedResources:
+    warn: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: example
+  namespace: argocd
+  labels:
+    argocd-rbac: global
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Remote EKS cluster
+  permitOnlyProjectScopedClusters: false
+  orphanedResources:
+    warn: true
+  clusterResourceWhitelist:
+  - group: ''
+    kind: PersistentVolume
+  namespaceResourceWhitelist:
+  - group: ''
+    kind: PersistentVolumeClaim
+  destinations:
+  - name: example
+    namespace: '{my-team,example}'
+  sourceRepos:
+  - https://github.com/cilindrox/terraform-eks

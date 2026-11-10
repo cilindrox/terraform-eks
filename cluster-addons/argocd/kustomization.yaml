@@ -1,0 +1,216 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+buildMetadata:
+- managedByLabel
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+namespace: argocd
+
+resources:
+- https://github.com/argoproj/argo-cd//manifests/ha/cluster-install?ref=v3.6.1
+- projects.yaml
+# Uncomment the resources below once kube-prom-stack CRDs have been applied
+# - servicemonitor.yaml
+
+# Pin image to override default install's "latest"
+images:
+- name: quay.io/argoproj/argocd
+  newTag: v3.6.1
+  digest: sha256:296e3d74f449b2ce45265613fcb68c18ed7366488360c8ea32f5f2a93d2e5c54
+
+configMapGenerator:
+# Manage RBAC policies as a standalone CSV
+# https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/
+- name: argocd-rbac-cm
+  behavior: merge
+  literals:
+  - policy.default=role:''
+  files:
+  - policy.csv
+
+patches:
+- path: argocd-cm.yaml
+- path: argocd-cmd-params-cm.yaml
+
+# Ignore the Secret resource to prevent overwriting it during an upgrade.
+- patch: |-
+    apiVersion: v1
+    metadata:
+      name: argocd-secret
+    kind: Secret
+    $patch: delete
+
+##
+# Global
+##
+
+# Deploy workloads to dedicated node pools.
+- target:
+    kind: (Deployment|StatefulSet)
+  patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: global-affinity
+    spec:
+      template:
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: type
+                    operator: In
+                    values:
+                    - addons
+          tolerations:
+          - key: CriticalAddonsOnly
+            operator: Exists
+
+##
+# Server Components
+##
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: argocd-repo-server
+    spec:
+      replicas: 3
+      template:
+        spec:
+          containers:
+          - name: argocd-repo-server
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: ARGOCD_EXEC_TIMEOUT
+              value: 2m
+            - name: GOMEMLIMIT
+              value: '1.8GiB'
+            resources:
+              requests:
+                cpu: '1'
+                memory: 1Gi
+              limits:
+                cpu: '2'
+                memory: 2Gi
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: argocd-server
+    spec:
+      replicas: 3
+      template:
+        spec:
+          containers:
+          - name: argocd-server
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: ARGOCD_API_SERVER_REPLICAS
+              value: '3'
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: argocd-application-controller
+    spec:
+      replicas: 3
+      template:
+        spec:
+          containers:
+          - name: argocd-application-controller
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: ARGOCD_CONTROLLER_REPLICAS
+              value: '3'
+            - name: ARGOCD_APPLICATION_TREE_SHARD_SIZE
+              value: '100'
+            - name: GOMEMLIMIT
+              value: '1.8GiB'
+            resources:
+              requests:
+                cpu: '1'
+                memory: 1Gi
+              limits:
+                cpu: '2'
+                memory: 2Gi
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: argocd-applicationset-controller
+    spec:
+      template:
+        spec:
+          containers:
+          - name: argocd-applicationset-controller
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: ARGOCD_APPLICATIONSET_CONTROLLER_CONCURRENT_APPLICATION_UPDATES
+              value: '10'
+            - name: GOMAXPROCS
+              value: '4'
+            - name: GOMEMLIMIT
+              value: '1.8GiB'
+            resources:
+              requests:
+                cpu: '2'
+                memory: 1Gi
+              limits:
+                cpu: '4'
+                memory: 2Gi
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: argocd-dex-server
+    spec:
+      replicas: 3
+      template:
+        spec:
+          containers:
+          - name: dex
+            imagePullPolicy: IfNotPresent
+          initContainers:
+          - name: copyutil
+            imagePullPolicy: IfNotPresent
+
+- target:
+    kind: Role
+    name: argocd-dex-server
+  patch: |-
+    - op: add
+      path: /rules/-
+      value:
+        apiGroups: [""]
+        resources: [configmaps]
+        verbs: [create, update, delete]
+
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: argocd-notifications-controller
+    spec:
+      template:
+        spec:
+          containers:
+          - name: argocd-notifications-controller
+            imagePullPolicy: IfNotPresent
+
+- patch: |-
+    apiVersion: v1
+    metadata:
+      name: argocd-notifications-secret
+    kind: Secret
+    $patch: delete

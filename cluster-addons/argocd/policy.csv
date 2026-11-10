@@ -1,0 +1,16 @@
+p, role:my-team, applications, action/apps/Deployment/restart, example/*-my-team-*, allow
+p, role:my-team, applications, get, example/*-my-team-*, allow
+p, role:my-team, applications, sync, example/*-my-team-*, allow
+p, role:my-team, clusters, get, example, allow
+p, role:my-team, logs, get, example/*-my-team-*, allow
+p, role:my-team, projects, get, example, allow
+
+p, role:viewer, applications, get, example/*, allow
+p, role:viewer, clusters, get, example, allow
+p, role:viewer, logs, get, example/*, allow
+p, role:viewer, projects, get, example, allow
+p, role:viewer, repositories, get, *, allow
+
+g, acme:admin, role:admin
+g, acme:viewer, role:viewer
+g, acme:my-team, role:my-team

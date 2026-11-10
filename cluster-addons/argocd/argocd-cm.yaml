@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+data:
+  admin.enabled: 'false'
+  application.resourceTrackingMethod: annotation
+  application.sync.requireOverridePrivilegeForRevisionSync: 'true'
+  dex.config: |
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    connectors:
+    - type: github
+      id: github
+      name: GitHub
+      config:
+        clientID: EXAMPLE
+        clientSecret: $dex.github.clientSecret
+        orgs:
+        - name: acme
+          teams:
+          - admin
+          - my-team
+          - viewer
+  globalProjects: |-
+    - labelSelector:
+        matchExpressions:
+        - key: argocd-rbac
+          operator: In
+          values:
+          - global
+      projectName: global-rbac
+  help.chatUrl: https://acme.slack.com/archives/123456XYZ
+  help.chatText: Need help?
+  resource.customizations.ignoreDifferences.admissionregistration.k8s.io_ValidatingWebhookConfiguration: |
+    jqPathExpressions:
+    - '.webhooks[]?.clientConfig.caBundle'
+  resource.customizations.ignoreDifferences.keda.sh_ScaledObject: |
+    jqPathExpressions:
+    - '.metadata.annotations["autoscaling.keda.sh/paused"]'
+    - '.metadata.annotations["autoscaling.keda.sh/paused-replicas"]'
+  resource.customizations.ignoreDifferences.all: |
+    jqPathExpressions:
+    - .spec.template.metadata.creationTimestamp
+    - .spec.volumeClaimTemplates[].metadata.creationTimestamp
+    - .spec.jobTemplate.metadata.creationTimestamp
+    - .spec.jobTemplate.spec.template.metadata.creationTimestamp
+  url: https://argocd.acme.com
+  users.anonymous.enabled: 'false'
+  server.sync.replace.allowed: 'false'
+  statusbadge.enabled: 'false'
+  timeout.reconciliation.jitter: 60s
+  webhook.refresh.jitter: 60s
+  webhook.refresh.jitter.threshold: '10'

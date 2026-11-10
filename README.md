@@ -57,6 +57,8 @@ aws ssm start-session \
   --parameters "{\"host\":[\"${CLUSTER_HOST}\"],\"portNumber\":[\"443\"],\"localPortNumber\":[\"8443\"]}"
 ```
 
+> **NOTE**: this session must stay open in the background or another terminal session.
+
 Once port-forwarding is configured, you will need to update your `$KUBECONFIG`
 file to instruct `kubectl` to use the tunnel. During initial setup, this is done
 via the following aws-cli command:
@@ -104,6 +106,14 @@ module "eks" {
 ```
 
 ### Troubleshooting
+
+If you see "An error occurred (`AccessDeniedException`)", check that the IAM
+permissions for the caller include `ssm:StartSession`.
+
+If you get `Forbidden` errors after connecting with a working tunnel, check
+that RBAC has been granted for your principal or an EKS access entry exists for
+your role. Access entries are declared using the `module.eks.access_entries`
+variable.
 
 ## Repo Structure
 

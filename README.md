@@ -40,13 +40,19 @@ You'll need to initiate a port forwarding session using the AWS CLI and SSM:
 ```bash
 # Fetch the bastion instance ID from terraform's output
 AWS_REGION='us-east-2'
-BASTION_INSTANCE_ID=$(terraform -chdir=acme/prod/${AWS_REGION}/eks output show='bastion_instance_id')
+CLUSTER_DIR="acme/prod/${AWS_REGION}/eks"
+BASTION_INSTANCE_ID=$(terraform -chdir="${CLUSTER_DIR}" output -raw bastion_instance_id)
+CLUSTER_ENDPOINT=$(terraform -chdir="${CLUSTER_DIR}" output -raw cluster_endpoint)
+
+# Strip https:// scheme. SSM needs the URI.
+CLUSTER_HOST="${CLUSTER_ENDPOINT#https://}"
 
 # Start the port-forwarding session
 aws ssm start-session \
+  --region "${AWS_REGION}" \
   --target "${BASTION_INSTANCE_ID}" \
   --document-name AWS-StartPortForwardingSessionToRemoteHost \
-  --parameters '{"host":["://amazonaws.com"],"portNumber":["443"],"localPortNumber":["8443"]}'
+  --parameters "{\"host\":[\"${CLUSTER_HOST}\"],\"portNumber\":[\"443\"],\"localPortNumber\":[\"8443\"]}"
 ```
 
 Once port-forwarding is configured, you will need to update your `$KUBECONFIG`

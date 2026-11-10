@@ -46,7 +46,7 @@ CLUSTER_DIR="acme/prod/${AWS_REGION}/eks"
 BASTION_INSTANCE_ID=$(terraform -chdir="${CLUSTER_DIR}" output -raw bastion_instance_id)
 CLUSTER_ENDPOINT=$(terraform -chdir="${CLUSTER_DIR}" output -raw cluster_endpoint)
 
-# Strip https:// scheme. SSM needs the URI.
+# SSM needs a bare URL, strip the https:// scheme.
 CLUSTER_HOST="${CLUSTER_ENDPOINT#https://}"
 
 # Start the port-forwarding session
@@ -62,7 +62,7 @@ aws ssm start-session \
 Once port-forwarding is configured, you will need to update your `$KUBECONFIG`
 file to instruct `kubectl` to use the tunnel. During initial setup, this is done
 via the following aws-cli command:
-"
+
 ```bash
 CLUSTER_NAME=$(terraform -chdir="${CLUSTER_DIR}" output -raw cluster_name)
 
@@ -86,8 +86,8 @@ clusters:
 ```
 
 > **NOTE**: the `proxy-url` config above uses a local HTTP CONNECT proxy.
-> Even if the scheme is `http`, kubectl will still use TLS to talk to the API
-> server.
+> Even if the scheme is `http`, kubectl will tunnel TLS over the local proxy to
+> talk to the API server.
 
 The bastion host is provisioned via a [custom terraform
 module](./modules/bastion-host).

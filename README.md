@@ -29,12 +29,53 @@ recovery.
 
 ### Accessing the Kubernetes Cluster
 
-The current implementation uses a private EC2 bastion host, accessible only via
-AWS Systems Manager (SSM) Session Manager for interacting with the cluster's
-private endpoint.
+The EKS cluster's control plane API endpoint is only accessible using AWS
+Systems Manager (SSM) Session Manager.
+
+This implementation uses a private EC2 bastion host inside the cluster VPC's
+private subnet.
+
+You'll need to initiate a port forwarding session using the AWS CLI and SSM:
+
+```bash
+# Fetch the bastion instance ID from terraform's output
+AWS_REGION='us-east-2'
+BASTION_INSTANCE_ID=$(terraform -chdir=acme/prod/${AWS_REGION}/eks output show='bastion_instance_id')
+
+# Start the port-forwarding session
+aws ssm start-session \
+  --target "${BASTION_INSTANCE_ID}" \
+  --document-name AWS-StartPortForwardingSessionToRemoteHost \
+  --parameters '{"host":["://amazonaws.com"],"portNumber":["443"],"localPortNumber":["8443"]}'
+```
+
+Once port-forwarding is configured, you will need to update your `$KUBECONFIG`
+file to instruct `kubectl` to use the tunnel. During initial setup, this is done
+via the following aws-cli command:
+"
+```bash
+aws eks update-kubeconfig \
+  --region "$AWS_REGION" \
+  --name example \
+  --proxy-url http://localhost:8443
+```
+
+This will add the `proxy-url` parameter to the `cluster` block, eg:
+
+```yaml
+# ~/.kube/config
+clusters:
+- cluster:
+    certificate-authority-data: <BASE64_DATA>
+    server: https://amazonaws.com
+    proxy-url: http://localhost:8443
+  name: private-eks-cluster
+```
 
 The bastion host is provisioned via a [custom terraform
 module](./modules/bastion-host).
+
+#### Using a VPN
 
 An alternative to the bastion deployment would be restricting the endpoint's
 public access to an IP or CIDR controlled by the managing teams, such as a VPN,

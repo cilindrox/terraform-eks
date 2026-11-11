@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - list:
+      elements:
+      - name: in-cluster
+        values:
+          project: local-cluster
+          targetRevision: {{ .Values.spec.source.targetRevision }}
+  template:
+    metadata:
+      name: 'cert-manager-{{`{{ .name }}`}}'
+      labels:
+        app.kubernetes.io/part-of: applicationsets
+    spec:
+      project: '{{`{{ .values.project }}`}}'
+      source:
+        repoURL: {{ .Values.spec.source.repoURL }}
+        targetRevision: '{{`{{ .values.targetRevision }}`}}'
+        path: cluster-addons/cert-manager
+        helm:
+          releaseName: cert-manager
+      destination:
+        namespace: cert-manager
+        name: '{{`{{ .name }}`}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        managedNamespaceMetadata:
+          labels:
+            app.kubernetes.io/managed-by: argocd
+        syncOptions:
+        - ApplyOutOfSyncOnly=true
+        - CreateNamespace=true
+        - FailOnSharedResource=true
+        - ServerSideApply=true

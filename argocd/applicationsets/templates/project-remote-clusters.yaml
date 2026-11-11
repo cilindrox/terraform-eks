@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: remote-clusters
+  namespace: argocd
+spec:
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  description: Manage cluster addons on remote EKS clusters
+  destinations:
+  # Restrict installing directly to the local cluster
+  - namespace: '*'
+    server: '!https://kubernetes.default.svc'
+  - namespace: '*'
+    server: '*'
+  sourceRepos:
+  - https://github.com/cilindrox/terraform-eks
+  orphanedResources:
+    warn: true

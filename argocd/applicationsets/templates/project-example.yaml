@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: example
+  namespace: argocd
+  labels:
+    argocd-rbac: global
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Remote EKS cluster
+  permitOnlyProjectScopedClusters: false
+  orphanedResources:
+    warn: true
+  destinations:
+  - name: example
+    namespace: '{my-team,example}'
+  sourceRepos:
+  - https://github.com/cilindrox/terraform-eks

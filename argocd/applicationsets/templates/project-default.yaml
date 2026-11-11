@@ -1,0 +1,14 @@
+# Remove all permissions from the 'default' project.
+# Forces use of dedicated projects with explicit source, destination, and
+# resource permissions.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: default
+spec:
+  sourceRepos: []
+  sourceNamespaces: []
+  destinations: []
+  namespaceResourceBlacklist:
+  - group: '*'
+    kind: '*'

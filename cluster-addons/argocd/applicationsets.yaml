@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: applicationsets
+  annotations:
+    kubernetes.io/description: >-
+      This Application acts as an "App of Apps" containing the different
+      ApplicationSets managed by Argo CD.
+  labels:
+    app.kubernetes.io/part-of: argocd
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  project: local-cluster
+  source:
+    repoURL: https://github.com/cilindrox/terraform-eks
+    targetRevision: main
+    path: argocd/applicationsets
+    helm:
+      releaseName: applicationsets
+      valueFiles:
+      - values.yaml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - ApplyOutOfSyncOnly=true
+    - CreateNamespace=false
+    - ServerSideApply=true
+    - FailOnSharedResource=true

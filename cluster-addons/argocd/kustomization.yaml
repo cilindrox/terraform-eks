@@ -11,7 +11,9 @@ namespace: argocd
 
 resources:
 - https://github.com/argoproj/argo-cd//manifests/ha/cluster-install?ref=v3.6.1
-- projects.yaml
+- argocd-self.yaml
+- applicationsets.yaml
+- project-local-cluster.yaml
 # Uncomment the resources below once kube-prom-stack CRDs have been applied
 # - servicemonitor.yaml
 

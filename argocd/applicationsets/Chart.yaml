@@ -1,0 +1,4 @@
+apiVersion: v2
+description: ApplicationSets managed by the 'applicationsets' App of Apps
+name: applicationsets
+version: 0.0.1

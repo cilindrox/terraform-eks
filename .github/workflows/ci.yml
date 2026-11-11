@@ -37,7 +37,7 @@ jobs:
         ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: true
         EDITORCONFIG_EDITORCONFIG_CHECKER_OPTIONS: -no-max-line-length
         # yamllint disable-line rule:line-length
-        KUBERNETES_KUBECONFORM_OPTIONS: -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+        KUBERNETES_KUBECONFORM_OPTIONS: -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -ignore-filename-pattern '.*/(charts|templates)/.*'
         TERRAFORM_TFLINT_CONFIG_FILE: .tflint.hcl
         VALIDATE_ALL_CODEBASE: false
         VALIDATE_BIOME_FORMAT: false

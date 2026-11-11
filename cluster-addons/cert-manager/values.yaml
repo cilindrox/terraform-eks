@@ -1,0 +1,91 @@
+global:
+  priorityClassName: system-cluster-critical
+
+clusterIssuer:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: acme@example.com
+
+# ref: https://cert-manager.io/docs/installation/best-practice/#high-availability
+cert-manager:
+  config:
+    gatewayAPI:
+      enabled: true
+      enableListenerSet: true
+    featureGates:
+      ListenerSets: true
+      ServerSideApply: true
+
+  crds:
+    enabled: true
+
+  enableCertificateOwnerRef: true
+
+  ingressShim:
+    defaultIssuerName: route53
+    defaultIssuerKind: ClusterIssuer
+
+  replicaCount: 2
+
+  serviceAccount:
+    create: true
+
+  podDisruptionBudget: &pdb
+    enabled: true
+    minAvailable: 1
+    unhealthyPodEvictionPolicy: AlwaysAllow
+
+  affinity: &affinity
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: type
+            operator: In
+            values:
+            - addons
+
+  tolerations: &tolerations
+  - key: CriticalAddonsOnly
+    operator: Exists
+
+  topologySpreadConstraints:
+  - maxSkew: 2
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/instance: cert-manager
+        app.kubernetes.io/component: controller
+
+  cainjector:
+    replicaCount: 2
+    affinity: *affinity
+    tolerations: *tolerations
+    podDisruptionBudget: *pdb
+    topologySpreadConstraints:
+    - maxSkew: 2
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/instance: cert-manager
+          app.kubernetes.io/component: cainjector
+
+  startupapicheck:
+    affinity: *affinity
+    tolerations: *tolerations
+
+  webhook:
+    replicaCount: 3
+    affinity: *affinity
+    tolerations: *tolerations
+    podDisruptionBudget: *pdb
+    topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/instance: cert-manager
+          app.kubernetes.io/component: webhook

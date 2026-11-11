@@ -38,6 +38,7 @@ patches:
 - path: argocd-cmd-params-cm.yaml
 
 # Ignore the Secret resource to prevent overwriting it during an upgrade.
+# This will be managed by ESO.
 - patch: |-
     apiVersion: v1
     metadata:

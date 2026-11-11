@@ -3,7 +3,8 @@ kind: ConfigMap
 metadata:
   name: argocd-cm
 data:
-  admin.enabled: 'false'
+  # TODO(gfestari): uncomment below to disable the default admin account
+  # admin.enabled: 'false'
   application.resourceTrackingMethod: annotation
   application.sync.requireOverridePrivilegeForRevisionSync: 'true'
   dex.config: |
